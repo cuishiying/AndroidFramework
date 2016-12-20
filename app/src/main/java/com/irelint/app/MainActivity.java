@@ -32,6 +32,11 @@ public class MainActivity extends BaseMvpActivity<MainPresenter,List<PromotionIt
     }
 
     @Override
+    public void showError(Throwable t) {
+
+    }
+
+    @Override
     public void renderModel(List<PromotionItem> data) {
         //渲染
 

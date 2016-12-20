@@ -46,9 +46,7 @@ public abstract class BaseMvpFragment<T extends BasePresenter,M> extends BaseFra
     }
 
     @Override
-    public void showError(Throwable t) {
-
-    }
+    public abstract void showError(Throwable t);
 
     @Override
     public abstract void renderModel(M data);

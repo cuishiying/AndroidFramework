@@ -1,5 +1,6 @@
 package com.irelint.framework.base;
 
+import com.blankj.utilcode.utils.LogUtils;
 import com.irelint.framework.http.CallBack;
 import com.irelint.framework.http.Error;
 import com.irelint.framework.http.ErrorHandler;
@@ -77,31 +78,30 @@ public class BasePresenter<V extends IBaseView>{
 
         @Override
         public void onFailed(Throwable e) {
-            if(null!=mView){
-                mView.showError(e);
-                Error err = ErrorHandler.handle(e);
-                switch (err.code){
-                    case 400:
-                        //请求格式错误
-                        break;
-                    case 401:
-                        //Unauthorized未授权
-                        break;
-                    case 404:
-                        //url错误
-                        break;
-                    case 408:
-                        //请求超时
-                        break;
-                    case 500:
-                        //服务器错误
-                        break;
-                    case 502:
-                        //网关错误
-                        break;
-                    default:
-                        break;
-                }
+            handleErr(e);
+            Error err = ErrorHandler.handle(e);
+            LogUtils.e(err.code);
+            switch (err.code){
+                case 400:
+                    //请求格式错误
+                    break;
+                case 401:
+                    //Unauthorized未授权
+                    break;
+                case 404:
+                    //url错误
+                    break;
+                case 408:
+                    //请求超时
+                    break;
+                case 500:
+                    //服务器错误
+                    break;
+                case 502:
+                    //网关错误,可能服務器在部署
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -110,6 +110,14 @@ public class BasePresenter<V extends IBaseView>{
          */
         protected void handleNullData() {
             mView.showEmpty();
+        }
+        /**
+         * 处理错误页面
+         */
+        protected void handleErr(Throwable e) {
+            if(null!=mView){
+                mView.showError(e);
+            }
         }
 
         /**

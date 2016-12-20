@@ -10,6 +10,7 @@ import java.util.Properties;
 /**
  * 作者：当我遇上你 on 2016-12-20 17:06
  * 邮箱：cuishiying163@163.com
+ * 配置文件的操作
  */
 
 public class ConfigController {

@@ -43,9 +43,7 @@ public abstract class BaseMvpActivity<T extends BasePresenter,M> extends BaseAct
     }
 
     @Override
-    public void showError(Throwable t) {
-        //统一显示错误页面
-    }
+    public abstract void showError(Throwable t);
 
     @Override
     public abstract void renderModel(M data);

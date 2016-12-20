@@ -29,13 +29,13 @@ public class ErrorHandler {
             }
         } else if(throwable instanceof JSONException){
             //Json解析异常
-            LogUtils.e(throwable.toString());
+            LogUtils.e("Json解析异常"+throwable.toString());
         }else if(throwable instanceof NullPointerException){
             //空指针异常
-            LogUtils.e(throwable.toString());
+            LogUtils.e("空指针异常"+throwable.toString());
         }else{
             //其他异常
-            LogUtils.e(throwable.toString());
+            LogUtils.e("其他异常"+throwable.toString());
         }
         return null;
     }
