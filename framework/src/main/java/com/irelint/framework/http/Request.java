@@ -24,8 +24,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class Request{
-
     private static volatile OkHttpClient sOkHttpClient;
+    private static volatile Retrofit mRetrofit;
     /**
      * 设缓存有效期为两天
      */
@@ -42,23 +42,6 @@ public class Request{
      * (假如请求了服务器并在a时刻返回响应结果，则在max-age规定的秒数内，浏览器将不会发送对应的请求到服务器，数据由缓存直接返回)时则不会使用缓存而请求服务器
      */
     private static final String CACHE_CONTROL_AGE = "max-age=0";
-
-    /**
-     *
-     * @param baseUrl 设置BaseUrl
-     * @param service   设置请求参数
-     * @param <T>
-     * @return
-     */
-    public <T> T init(String baseUrl,Class<T> service){
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .client(getOkHttpClient())
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-                .build();
-        return retrofit.create(service);
-    }
 
     private OkHttpClient getOkHttpClient() {
         if (sOkHttpClient == null) {
@@ -77,6 +60,29 @@ public class Request{
             }
         }
         return sOkHttpClient;
+    }
+
+    /**
+     *
+     * @param baseUrl 设置BaseUrl
+     * @param service   设置请求参数
+     * @param <T>
+     * @return
+     */
+    public  <T> T init(String baseUrl,Class<T> service){
+        if(null==mRetrofit){
+            synchronized (Request.class){
+                if(null==mRetrofit){
+                    mRetrofit = new Retrofit.Builder()
+                            .baseUrl(baseUrl)
+                            .client(getOkHttpClient())
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                            .build();
+                }
+            }
+        }
+        return mRetrofit.create(service);
     }
 
     /**
