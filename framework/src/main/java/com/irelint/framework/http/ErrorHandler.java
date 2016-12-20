@@ -29,10 +29,10 @@ public class ErrorHandler {
             }
         } else if(throwable instanceof JSONException){
             //Json解析异常
-
+            LogUtils.e(throwable.toString());
         }else if(throwable instanceof NullPointerException){
             //空指针异常
-
+            LogUtils.e(throwable.toString());
         }else{
             //其他异常
             LogUtils.e(throwable.toString());

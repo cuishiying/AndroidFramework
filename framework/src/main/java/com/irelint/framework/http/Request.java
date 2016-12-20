@@ -1,125 +1,130 @@
 package com.irelint.framework.http;
 
-import com.irelint.framework.common.Constants;
+import com.blankj.utilcode.utils.LogUtils;
+import com.blankj.utilcode.utils.NetworkUtils;
+import com.irelint.framework.base.BaseApplication;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
-import retrofit2.adapter.rxjava.HttpException;
-import retrofit2.adapter.rxjava.Result;
-import rx.Observable;
-import rx.Observer;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
-import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.schedulers.Schedulers;
+import okhttp3.Cache;
+import okhttp3.CacheControl;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Response;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * 作者：当我遇上你 on 2016-12-20 10:26
  * 邮箱：cuishiying163@163.com
  */
 
-public class Request {
+public class Request{
+
+    private static volatile OkHttpClient sOkHttpClient;
     /**
-     * 普通的网络请求
-     * @param observable
+     * 设缓存有效期为两天
+     */
+    private static final long CACHE_STALE_SEC = 60 * 60 * 24 * 2;
+
+    /**
+     * 查询缓存的Cache-Control设置，为if-only-cache时只查询缓存而不会请求服务器，max-stale可以配合设置缓存失效时间
+     * max-stale 指示客户机可以接收超出超时期间的响应消息。如果指定max-stale消息的值，那么客户机可接收超出超时期指定值之内的响应消息。
+     */
+    private static final String CACHE_CONTROL_CACHE = "only-if-cached, max-stale=" + CACHE_STALE_SEC;
+
+    /**
+     * 查询网络的Cache-Control设置，头部Cache-Control设为max-age=0
+     * (假如请求了服务器并在a时刻返回响应结果，则在max-age规定的秒数内，浏览器将不会发送对应的请求到服务器，数据由缓存直接返回)时则不会使用缓存而请求服务器
+     */
+    private static final String CACHE_CONTROL_AGE = "max-age=0";
+
+    /**
+     *
+     * @param baseUrl 设置BaseUrl
+     * @param service   设置请求参数
      * @param <T>
      * @return
      */
-    private <T> Observable<T> convert(Observable<T> observable){
-        return observable
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
+    public <T> T init(String baseUrl,Class<T> service){
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .client(getOkHttpClient())
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+        return retrofit.create(service);
+    }
+
+    private OkHttpClient getOkHttpClient() {
+        if (sOkHttpClient == null) {
+            synchronized (Request.class) {
+                Cache cache = new Cache(new File(BaseApplication.getAppContext().getCacheDir(), "HttpCache"),
+                        1024 * 1024 * 100);
+                if (sOkHttpClient == null) {
+                    sOkHttpClient = new OkHttpClient.Builder().cache(cache)
+                            .connectTimeout(6, TimeUnit.SECONDS)
+                            .readTimeout(6, TimeUnit.SECONDS)
+                            .writeTimeout(6, TimeUnit.SECONDS)
+                            .addInterceptor(mRewriteCacheControlInterceptor)
+                            .addNetworkInterceptor(mRewriteCacheControlInterceptor)
+                            .addInterceptor(mLoggingInterceptor).build();
+                }
+            }
+        }
+        return sOkHttpClient;
     }
 
     /**
-     * 需要token的请求
-     * @param observable
-     * @param <T>
-     * @return
+     * 云端响应头拦截器，用来配置缓存策略
+     * Dangerous interceptor that rewrites the server's cache-control header.
      */
-    private <T> Observable<T> convertToken(final Observable<T> observable){
-        return Observable
-                .just(null)
-                .flatMap(new Func1<Object, Observable<T>>() {
-                    @Override
-                    public Observable<T> call(Object o) {
-                        return observable;
-                    }
-                })
-                .retryWhen(new Func1<Observable<? extends Throwable>, Observable<?>>() {
-                    @Override
-                    public Observable<?> call(Observable<? extends Throwable> observable) {
-                        // Here we just retry 3 time
-                        return observable
-                                .zipWith(Observable.range(1, 3), new Func2<Throwable, Integer, Throwable>() {
-                                    @Override
-                                    public Throwable call(Throwable throwable, Integer integer) {
-                                        //token过期
-                                        return throwable;
-                                    }
-                                })
-                                .flatMap(new Func1<Throwable, Observable<?>>() {
-                                    @Override
-                                    public Observable<?> call(Throwable throwable) {
-                                        if (throwable instanceof HttpException) {
-                                            // Request token refresh if request UserInfo fail
-                                            return refreshToken().doOnNext(new Action1<Object>() {
-
-                                                @Override
-                                                public void call(Object o) {
-                                                    //刷新token
-                                                }
-                                            });
-                                        }
-                                        return Observable.just(throwable);
-                                    }
-                                });
-                    }
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread());
-    }
-    /**
-     * 请求刷新token接口
-     */
-    public Observable<Result<Object>> refreshToken(){
-        HashMap<String, String> params = new HashMap<>();
-        return RetrofitManager.getInstance(Constants.TYPE_MEIZI).refreshToken(params);
-    }
-
-    class BaseObserver<T> implements Observer<T> {
-
-        OnRequestListener<T> listener;
-
-        public BaseObserver(OnRequestListener<T> listener) {
-            this.listener = listener;
-        }
-
+    private final Interceptor mRewriteCacheControlInterceptor = new Interceptor() {
         @Override
-        public void onCompleted() {
-
+        public Response intercept(Chain chain) throws IOException {
+            okhttp3.Request request = chain.request();
+            if (!NetworkUtils.isConnected(BaseApplication.getAppContext())) {
+                request = request.newBuilder()
+                        .cacheControl(CacheControl.FORCE_CACHE)
+                        .build();
+                LogUtils.d("no network");
+            }
+            Response originalResponse = chain.proceed(request);
+            if (NetworkUtils.isConnected(BaseApplication.getAppContext())) {
+                //有网的时候读接口上的@Headers里的配置，你可以在这里进行统一的设置
+                String cacheControl = request.cacheControl().toString();
+                return originalResponse.newBuilder()
+                        .header("Cache-Control", cacheControl)
+                        .removeHeader("Pragma")
+                        .build();
+            } else {
+                return originalResponse.newBuilder()
+                        .header("Cache-Control", "public, only-if-cached, max-stale=" + CACHE_STALE_SEC)
+                        .removeHeader("Pragma")
+                        .build();
+            }
         }
-
-        @Override
-        public void onError(Throwable e) {
-            listener.onFailed(e);
-        }
-
-        @Override
-        public void onNext(T t) {
-            //主线程
-            listener.onSuccess(t);
-        }
-    }
-    //***********************************用法**************************************
+    };
 
     /**
-     * 获取token
+     * 日志
      */
-    public void getToken(Map<String,String> params, OnRequestListener listener){
-        convert(RetrofitManager.getInstance(Constants.TYPE_MEIZI).refreshToken(params))
-                .subscribe(new BaseObserver(listener));
-    }
+    private final Interceptor mLoggingInterceptor = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            okhttp3.Request request = chain.request();
+            long t1 = System.nanoTime();
+            LogUtils.i(String.format("Sending request %s on %s%n%s", request.url(), chain.connection(), request.headers()));
+            Response response = chain.proceed(request);
+            long t2 = System.nanoTime();
+            LogUtils.i(String.format(Locale.getDefault(), "Received response for %s in %.1fms%n%s",
+                    response.request().url(), (t2 - t1) / 1e6d, response.headers()));
+            return response;
+        }
+    };
+
 }

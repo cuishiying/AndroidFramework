@@ -1,8 +1,8 @@
 package com.irelint.framework.base;
 
+import com.irelint.framework.http.CallBack;
 import com.irelint.framework.http.Error;
 import com.irelint.framework.http.ErrorHandler;
-import com.irelint.framework.http.OnRequestListener;
 import com.irelint.framework.http.Request;
 
 /**
@@ -63,7 +63,7 @@ public class BasePresenter<V extends IBaseView>{
                 " requesting data to the Presenter");
     }
 
-    public class BaseRequestListener<M> implements OnRequestListener<M> {
+    public class BaseCallBack<M> implements CallBack<M> {
 
         @Override
         public void onSuccess(final M data) {
