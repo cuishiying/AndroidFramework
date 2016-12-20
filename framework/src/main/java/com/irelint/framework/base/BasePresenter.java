@@ -90,6 +90,9 @@ public class BasePresenter<V extends IBaseView>{
                     case 404:
                         //url错误
                         break;
+                    case 408:
+                        //请求超时
+                        break;
                     case 500:
                         //服务器错误
                         break;
@@ -118,5 +121,9 @@ public class BasePresenter<V extends IBaseView>{
                 mView.renderModel(data);
             }
         }
+    }
+
+    public void loadData(){
+        //读取配置文件，找到Service.class,Baseurl
     }
 }
