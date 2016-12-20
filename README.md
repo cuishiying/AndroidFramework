@@ -4,7 +4,7 @@ Android框架基础类库，采用MVP模式，基于RxJava+Retrofit2进行开发
 
 主要用到的开源库
 ---------------
-RxJava、Retrofit2、Butterknife、PhotoView、Picasso、OkHttp...
+RxJava、Retrofit2、Picasso、OkHttp、utilcode...
 
 声明
 ---------------

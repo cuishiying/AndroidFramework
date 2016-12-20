@@ -22,7 +22,7 @@ public class ErrorHandler {
             HttpException error = (HttpException) throwable;
             try {
                 Error e = GsonTools.getInstance().changeGsonToBean(error.response().errorBody().string(), Error.class);
-                e.code = error.response().code()+"";//根据不同的错误码进行处理
+                e.code = error.response().code();//根据不同的错误码进行处理,502网关异常,400权限异常，404,500
                 return e;
             } catch (IOException e) {
                 e.printStackTrace();

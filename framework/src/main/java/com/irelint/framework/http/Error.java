@@ -6,7 +6,7 @@ package com.irelint.framework.http;
  */
 
 public class Error {
-    public String code;
+    public int code;
     public String error;
     public String error_description;
 }

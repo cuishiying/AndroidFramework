@@ -1,10 +1,13 @@
 package com.irelint.framework.base;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.widget.ImageView;
 
+import com.irelint.framework.R;
 import com.squareup.picasso.Picasso;
 
 /**
@@ -34,7 +37,9 @@ public class BaseFragment extends Fragment {
         Picasso.with(mContext).cancelTag(mContext);
         super.onDestroyView();
     }
-
+    public void setImageUrl(Context context, ImageView view, String url){
+        Picasso.with(context).load(url).placeholder(R.color.place_holder).error(R.drawable.ic_load_fail).into(view);
+    }
     /**
      * 显示空页面
      */

@@ -3,7 +3,9 @@ package com.irelint.framework.base;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.ImageView;
 
+import com.irelint.framework.R;
 import com.squareup.picasso.Picasso;
 
 /**
@@ -34,6 +36,13 @@ public class BaseActivity extends AppCompatActivity{
     protected void onDestroy() {
         AppManager.getAppManager().finishActivity(this);
         super.onDestroy();
+    }
+
+    /**
+     * 设置缓存图片
+     */
+    protected void setImageUrl(ImageView view, String url){
+        Picasso.with(this).load(url).placeholder(R.color.place_holder).error(R.drawable.ic_load_fail).into(view);
     }
 
     /**
