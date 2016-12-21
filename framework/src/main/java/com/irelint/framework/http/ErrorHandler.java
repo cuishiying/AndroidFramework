@@ -6,6 +6,7 @@ import com.irelint.framework.utils.GsonTools;
 import org.json.JSONException;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 import retrofit2.adapter.rxjava.HttpException;
 
@@ -33,6 +34,9 @@ public class ErrorHandler {
         }else if(throwable instanceof NullPointerException){
             //空指针异常
             LogUtils.e("空指针异常"+throwable.toString());
+        }else if(throwable instanceof SocketTimeoutException){
+            //超时
+            LogUtils.e("网络超时"+throwable.toString());
         }else{
             //其他异常
             LogUtils.e("其他异常"+throwable.toString());
